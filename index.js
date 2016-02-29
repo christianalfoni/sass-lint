@@ -6,7 +6,7 @@ var slConfig = require('./lib/config'),
     slRules = require('./lib/rules'),
     glob = require('glob'),
     path = require('path'),
-    fs = require('fs-extra');
+    fs = require('fs');
 
 var sassLint = function (config) {
   config = require('./lib/config')(config);
