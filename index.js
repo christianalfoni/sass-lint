@@ -3,10 +3,7 @@
 var slConfig = require('./lib/config'),
     groot = require('./lib/groot'),
     helpers = require('./lib/helpers'),
-    slRules = require('./lib/rules'),
-    glob = require('glob'),
-    path = require('path'),
-    fs = require('fs-extra');
+    slRules = require('./lib/rules');
 
 var sassLint = function (config) {
   config = require('./lib/config')(config);
@@ -94,8 +91,8 @@ sassLint.resultCount = function (results) {
  * @param {string} configPath path to a config file
  * @returns {object} an object containing error & warning counts plus lint messages for each parsed file
  */
-sassLint.lintText = function (file, options, configPath) {
-  var rules = slRules(this.getConfig(options, configPath)),
+sassLint.lintText = function (file, options, config) {
+  var rules = slRules(this.getConfig(options, config)),
       ast = {},
       detects,
       results = [],
@@ -144,50 +141,6 @@ sassLint.lintText = function (file, options, configPath) {
 };
 
 /**
- * Takes a glob pattern or target string and creates an array of files as targets for
- * linting taking into account any user specified ignores. For each resulting file sassLint.lintText
- * is called which returns an object of results for that file which we push to our results object.
- *
- * @param {string} files a glob pattern or single file path as a lint target
- * @param {object} options user specified rules/options passed in
- * @param {string} configPath path to a config file
- * @returns {object} results object containing all results
- */
-sassLint.lintFiles = function (files, options, configPath) {
-  var that = this,
-      results = [],
-      ignores = '';
-
-  if (files) {
-    ignores = this.getConfig(options, configPath).files.ignore || '';
-    files = glob.sync(files, {ignore: ignores});
-  }
-  else {
-    files = this.getConfig(options, configPath).files;
-
-    if (typeof files === 'string') {
-      files = glob.sync(files);
-    }
-    else {
-      files = glob.sync(files.include, {
-        'ignore': files.ignore
-      });
-    }
-  }
-
-  files.forEach(function (file) {
-    var lint = that.lintText({
-      'text': fs.readFileSync(file),
-      'format': options.syntax ? options.syntax : path.extname(file).replace('.', ''),
-      'filename': file
-    }, options, configPath);
-    results.push(lint);
-  });
-
-  return results;
-};
-
-/**
  * Handles formatting of results using EsLint formatters
  *
  * @param {object} results our results object
@@ -219,19 +172,7 @@ sassLint.outputResults = function (results, options, configPath) {
   if (this.resultCount(results)) {
 
     var formatted = this.format(results, options, configPath);
-
-    if (config.options['output-file']) {
-      try {
-        fs.outputFileSync(path.resolve(process.cwd(), config.options['output-file']), formatted);
-        console.log('Output successfully written to ' + path.resolve(process.cwd(), config.options['output-file']));
-      }
-      catch (e) {
-        console.log('Error: Output was unable to be written to ' + path.resolve(process.cwd(), config.options['output-file']));
-      }
-    }
-    else {
-      console.log(formatted);
-    }
+    console.log(formatted);
   }
   return results;
 };
